@@ -86,7 +86,7 @@ public class MyAuthReceiver : MonoBehaviour, Authenticator.CallbackInterface
 }
 ```
 
-`AuthenticatorReceiver.cs`를 그대로 사용하면 Hub.App에 AccountName을 세팅하고 Debug 로그까지 출력해 줍니다.  
+`AuthenticatorReceiver.cs`를 그대로 사용하면 AccountName을 Debug 로그로 출력해 줍니다.  
 필요에 따라 직접 구현체를 만들어도 됩니다.
 
 ---
