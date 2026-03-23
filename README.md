@@ -36,12 +36,6 @@ https://github.com/oojjrs/unity_oauth.git?path=/Assets
 
 - 빈 GameObject를 만들고 `Authenticator`를 붙입니다.
 - 같은 GameObject에 `Authenticator.CallbackInterface`를 구현하는 스크립트를 함께 붙입니다.
-
-2. **콜러에서 실행**
-
-```csharp
-// 같은 GameObject에 붙어있는 CallbackInterface 구현체를 찾아 실행
-await GetComponent<Authenticator>().RunAsync();
 ```
 
 ---
@@ -77,12 +71,6 @@ public class MyAuthReceiver : MonoBehaviour, Authenticator.CallbackInterface
     {
         Debug.LogException(e);
     }
-
-    private async void Start()
-    {
-        // Authenticator 컴포넌트 찾아 실행
-        await GetComponent<Authenticator>().RunAsync();
-    }
 }
 ```
 
@@ -110,11 +98,6 @@ public class MyAuthReceiver : MonoBehaviour, Authenticator.CallbackInterface
 
 ### `class Authenticator : MonoBehaviour`
 
-- `Task RunAsync()`  
-  같은 GameObject에서 `CallbackInterface` 구현 컴포넌트를 찾아 실행합니다.
-- `Task RunAsync(CallbackInterface callback)`  
-  명시적으로 콜백 인스턴스를 전달하여 실행합니다.
-
 ### `interface Authenticator.CallbackInterface`
 
 - `CancellationToken CancellationToken { get; }`  
@@ -134,7 +117,6 @@ public class MyAuthReceiver : MonoBehaviour, Authenticator.CallbackInterface
 
 - **메인 스레드에서 호출**: UGS API는 대부분 메인 스레드 컨텍스트에서의 후속 처리(UI 갱신 등)를 가정합니다.
 - **취소 토큰 설계**: `MonoBehaviour` 수명과 연동해 파괴 시 토큰을 취소하세요.
-- **콜백 동거 보장**: `RunAsync()`(매개변수 없는 오버로드)는 내부적으로 `GetComponent<CallbackInterface>()`를 사용하므로 **같은 GameObject**에 콜백 구현체를 붙여야 합니다. 없으면 경고만 남기고 종료합니다.
 - **프로덕션 전환**: 익명 로그인 대신 플랫폼 계정 연동(Apple/Google/Steam 등)이 필요하면 `AuthenticationService`의 대응 메서드로 교체하고, 성공 후 플레이어 이름 조회/콜백 패턴은 동일하게 유지할 수 있습니다.
 
 ---
