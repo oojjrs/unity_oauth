@@ -104,8 +104,8 @@ public class MyAuthReceiver : MonoBehaviour, Authenticator.CallbackInterface
   진행 중 취소 제어. 컴포넌트 파괴 시 `Cancel`되도록 구현하는 것을 권장합니다.
 - `ILogger Logger { get; }`  
   Unity 표준 로거. 필요 시 커스텀 래퍼 사용 가능.
-- `void OnAuthenticated(string accountName)`  
-  성공 시 호출. UGS 플레이어 이름이 전달됩니다.
+- `void OnAuthenticated(string account, string nickname)`  
+  성공 시 호출. UGS 플레이어 uid와 이름이 전달됩니다.
 - `void OnError(AuthenticationException e)`  
 - `void OnError(OperationCanceledException e)`  
 - `void OnError(RequestFailedException e)`  
