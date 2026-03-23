@@ -20,12 +20,19 @@ namespace oojjrs.oauth
             void OnError(RequestFailedException e);
         }
 
-        public Task RunAsync()
+        private async void Start()
+        {
+            await RunAsync();
+
+            Destroy(gameObject);
+        }
+
+        private Task RunAsync()
         {
             return RunAsync(GetComponent<CallbackInterface>());
         }
 
-        public async Task RunAsync(CallbackInterface callback)
+        private async Task RunAsync(CallbackInterface callback)
         {
             var logger = callback?.Logger ?? Debug.unityLogger;
             if (callback == default)
