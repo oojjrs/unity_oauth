@@ -14,7 +14,7 @@ namespace oojjrs.oauth
             CancellationToken CancellationToken { get; }
             ILogger Logger { get; }
 
-            void OnAuthenticated(string accountName);
+            void OnAuthenticated(string account, string nickname);
             void OnError(AuthenticationException e);
             void OnError(OperationCanceledException e);
             void OnError(RequestFailedException e);
@@ -63,7 +63,7 @@ namespace oojjrs.oauth
                 if (IsAlive() == false)
                     return;
 
-                callback.OnAuthenticated(playerName);
+                callback.OnAuthenticated(AuthenticationService.Instance.PlayerId, playerName);
             }
             catch (AuthenticationException e)
             {
