@@ -1,5 +1,14 @@
 {
   "dependencies": {
+    "com.oojjrs.oauth": {
+      "version": "file:src",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.services.authentication": "3.6.1",
+        "com.unity.services.core": "1.16.0"
+      }
+    },
     "com.unity.ext.nunit": {
       "version": "2.0.5",
       "depth": 2,

@@ -1,0 +1,19 @@
+{
+  "name": "com.oojjrs.oauth",
+  "displayName": "OOJJRS' Unity AuthenticationService Helper",
+  "version": "1.2.0",
+  "unity": "6000.0",
+  "description": "Authentication flow and sign-in strategy abstraction for Unity Gaming Services.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oojjrs/unity_oauth.git?path=/Packages/src"
+  },
+  "author": {
+    "name": "oojjrs",
+    "email": "oojjrs@gmail.com"
+  },
+  "dependencies": {
+    "com.unity.services.authentication": "3.6.1",
+    "com.unity.services.core": "1.16.0"
+  }
+}

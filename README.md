@@ -1,125 +1,52 @@
 # unity_oauth
-Unity Gaming Services(UGS) Authentication을 간단히 붙이기 위한 경량 래퍼입니다.  
-`Authenticator` + `AuthenticatorReceiver` 구조로 **UGS 초기화 → 익명 로그인 → 플레이어 이름 조회 → 콜백 통지**까지의 흐름을 처리합니다.
 
----
-
-## 요구 사항
-
-- Unity 6000.0 LTS 이상 권장
-- 의존성 패키지 (자동 해결)
-  - `com.unity.services.core`
-  - `com.unity.services.authentication`
-- UGS Project 연결(프로젝트 ID 설정)
-
----
+Unity Gaming Services Authentication의 초기화, 로그인 전략 실행, UGS Player ID와 플레이어 이름 조회를 담당하는 Unity 패키지다.
 
 ## 설치
 
-### 1) Git URL로 UPM 추가
+프로젝트의 `Packages/manifest.json`에 추가한다.
 
-Unity Package Manager → **Add package from git URL…**
-
-```text
-https://github.com/oojjrs/unity_oauth.git?path=/Assets
-```
-
-### 2) 수동 소스 포함
-
-`Assets/` 하위에 `Authenticator.cs`, `AuthenticatorReceiver.cs`를 직접 추가해도 동작하지만, 권장하지 않습니다.
-
----
-
-## 빠른 시작 (Quick Start)
-
-1. **Scene에 컴포넌트 배치**
-
-- 빈 GameObject를 만들고 `Authenticator`를 붙입니다.
-- 같은 GameObject에 `Authenticator.CallbackInterface`를 구현하는 스크립트를 함께 붙입니다.
-```
-
----
-
-## 사용 예시
-
-```csharp
-using oojjrs.oauth;
-using UnityEngine;
-
-[RequireComponent(typeof(Authenticator))]
-public class MyAuthReceiver : MonoBehaviour, Authenticator.CallbackInterface
+```json
 {
-    public System.Threading.CancellationToken CancellationToken => null /* 필요 시 구현 */;
-    public ILogger Logger => null; // 필요 시 커스텀 로거 주입
-
-    public void OnAuthenticated(string accountName)
-    {
-        Debug.Log(accountName);
-    }
-
-    public void OnError(Unity.Services.Authentication.AuthenticationException e)
-    {
-        Debug.LogException(e);
-    }
-
-    public void OnError(System.OperationCanceledException e)
-    {
-        Debug.Log($"{name}> CANCELED.");
-    }
-
-    public void OnError(Unity.Services.Core.RequestFailedException e)
-    {
-        Debug.LogException(e);
-    }
+  "dependencies": {
+    "com.oojjrs.oauth": "https://github.com/oojjrs/unity_oauth.git?path=/Packages/src"
+  }
 }
 ```
 
-`AuthenticatorReceiver.cs`를 그대로 사용하면 AccountName을 Debug 로그로 출력해 줍니다.  
-필요에 따라 직접 구현체를 만들어도 됩니다.
+## 1.2 마이그레이션
 
----
+1.2에서 플랫폼 로그인 전략 분리를 도입하며 패키지 유지보수를 재개했습니다.
 
-## 동작 방식
+패키지 루트가 `Assets`에서 `Packages/src`로 이동했습니다. 기존 프로젝트의 manifest에서 `?path=/Assets`를 `?path=/Packages/src`로 변경해야 합니다. 런타임 asmdef와 `Authenticator` 스크립트 GUID는 유지됩니다. `Authenticator.CallbackInterface`의 Unity SDK 예외 매개변수는 아래의 OAuth 소유 예외 타입으로 교체되었습니다.
 
-- **UGS 초기화**  
-  아직 초기화되지 않았다면 `UnityServices.InitializeAsync()`를 호출합니다.
-- **생존성(Alive) 체크**  
-  매 단계 후 “컴포넌트가 파괴되지 않았는지”와 “취소 토큰이 취소되지 않았는지”를 확인하여 조기 반환합니다.
-- **로그인**  
-  로그인 상태가 아니면 **익명 로그인**(`SignInAnonymouslyAsync`)을 시도합니다. (추후 여러 옵션 추가 예정)
-- **플레이어 이름 조회**  
-  `GetPlayerNameAsync()`로 표시용 플레이어 이름을 받아 콜백으로 반환합니다.
-- **오류 처리**  
-  `AuthenticationException`, `OperationCanceledException`, `RequestFailedException`을 별도로 포착하여 각각의 `OnError(...)`로 위임합니다.
+## 책임
 
----
+- Unity Gaming Services 초기화
+- 주입된 로그인 전략 실행
+- 기본 익명 로그인
+- UGS Player ID와 플레이어 이름 반환
+- UGS 예외를 SDK 독립적인 `AuthenticationServiceException`, `AuthenticationRequestFailedException`으로 변환
+- 취소 오류 전달
+- 로그인 전략에서 발생한 일반 오류를 SDK 독립적인 `AuthenticationFlowException`으로 감싸 주 콜백 계약에 전달
 
-## API
+Steamworks.NET, EOS SDK, STOVE SDK와 플랫폼별 사용자 타입은 참조하지 않는다.
 
-### `class Authenticator : MonoBehaviour`
+## 로그인 전략
 
-### `interface Authenticator.CallbackInterface`
+`Authenticator`와 같은 GameObject에 `AuthenticationSignInInterface`를 구현한 컴포넌트가 있으면 해당 전략을 실행한다. 구현이 없으면 `AnonymousAuthenticationSignIn`으로 익명 로그인한다.
 
-- `CancellationToken CancellationToken { get; }`  
-  진행 중 취소 제어. 컴포넌트 파괴 시 `Cancel`되도록 구현하는 것을 권장합니다.
-- `ILogger Logger { get; }`  
-  Unity 표준 로거. 필요 시 커스텀 래퍼 사용 가능.
-- `void OnAuthenticated(string accountName)`  
-  성공 시 호출. UGS 플레이어 이름이 전달됩니다.
-- `void OnError(AuthenticationException e)`  
-- `void OnError(OperationCanceledException e)`  
-- `void OnError(RequestFailedException e)`  
-  예외 유형별 후처리를 분리할 수 있습니다.
+플랫폼 티켓 발급과 UGS의 플랫폼별 로그인 API 매핑은 별도 조립 어댑터가 담당한다. 이 패키지의 코어는 특정 플랫폼을 알지 않는다.
 
----
+인증이 끝나면 `Authenticator` 컴포넌트만 제거된다. 같은 GameObject에 배치한 플랫폼 컴포넌트와 콜백 수신기는 계속 유지된다.
 
-## 베스트 프랙티스 & 주의 사항
+## 오류 계약
 
-- **메인 스레드에서 호출**: UGS API는 대부분 메인 스레드 컨텍스트에서의 후속 처리(UI 갱신 등)를 가정합니다.
-- **취소 토큰 설계**: `MonoBehaviour` 수명과 연동해 파괴 시 토큰을 취소하세요.
-- **프로덕션 전환**: 익명 로그인 대신 플랫폼 계정 연동(Apple/Google/Steam 등)이 필요하면 `AuthenticationService`의 대응 메서드로 교체하고, 성공 후 플레이어 이름 조회/콜백 패턴은 동일하게 유지할 수 있습니다.
+소비 게임은 Unity Authentication 또는 Unity Services Core 예외 타입을 직접 참조할 필요가 없다. `Authenticator.CallbackInterface`는 다음 타입만 노출한다.
 
----
+- `AuthenticationServiceException`: 인증 오류 코드와 SDK 독립적인 알림 목록
+- `AuthenticationRequestFailedException`: UGS 요청 오류 코드
+- `OperationCanceledException`: 취소
+- `AuthenticationFlowException`: 플랫폼 로그인 전략을 포함한 그 밖의 인증 흐름 오류
 
-## 라이선스
-없음
+원본 SDK 예외는 각 래퍼의 `InnerException`으로 보존된다. UGS가 알림 목록을 제공하지 않으면 `Notifications`는 빈 목록이다.
