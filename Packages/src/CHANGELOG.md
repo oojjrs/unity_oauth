@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.1
+
+- `Authenticator`의 인증과 수명 주기 흐름을 UnityOnet에서 분리하기 직전의 `MyNetAuthenticator` 동작과 맞췄습니다.
+- 주입된 로그인 전략 대신 로그인되지 않은 상태에서 익명 로그인을 직접 실행하도록 복원했습니다.
+- 인증 흐름이 끝나면 `Authenticator` 컴포넌트만이 아닌 GameObject 전체를 제거하도록 복원했습니다.
+- `AuthenticationServiceException`을 `MyAuthenticationException`으로 교체하고 SDK 독립적인 알림을 중첩 `MyNotification`으로 제공하도록 변경했습니다.
+- `AuthenticationFlowException`을 제거하고 `AuthenticationRequestFailedException`이 `Exception`을 직접 상속하도록 복원했습니다.
+
 ## 1.2.0
 
 - 플랫폼 로그인 전략 분리를 도입하며 패키지 유지보수를 재개했습니다.

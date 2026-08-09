@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.Services.Authentication;
@@ -16,13 +15,12 @@ namespace oojjrs.oauth
             ILogger Logger { get; }
 
             void OnAuthenticated(string account, string nickname);
-            void OnError(AuthenticationFlowException e);
-            void OnError(AuthenticationRequestFailedException e);
-            void OnError(AuthenticationServiceException e);
+            void OnError(MyAuthenticationException e);
             void OnError(OperationCanceledException e);
+            void OnError(AuthenticationRequestFailedException e);
         }
 
-        private bool _isQuitting;
+        private bool _isQuitting = false;
 
         private void OnApplicationQuit()
         {
@@ -33,8 +31,8 @@ namespace oojjrs.oauth
         {
             await RunAsync();
 
-            if ((this != null) && (_isQuitting == false))
-                Destroy(this);
+            if (_isQuitting == false)
+                Destroy(gameObject);
         }
 
         private Task RunAsync()
@@ -45,77 +43,52 @@ namespace oojjrs.oauth
 
         private async Task RunAsync(CallbackInterface callback, UnityEngine.Object callbackObject)
         {
-            var logger = callbackObject != null ? callback.Logger ?? Debug.unityLogger : Debug.unityLogger;
+            var logger = (callbackObject != null) ? (callback.Logger ?? Debug.unityLogger) : Debug.unityLogger;
             if (callbackObject == null)
             {
                 // 경고 로깅을 이상하게 해야되네 -.-
                 logger.Log(LogType.Warning, $"{name}> DON'T HAVE CALLBACK FUNCTION.");
-                return;
             }
 
             try
             {
-                if (UnityServices.State != ServicesInitializationState.Initialized)
+                if (UnityServices.State is not (ServicesInitializationState.Initialized or ServicesInitializationState.Initializing))
                     await UnityServices.InitializeAsync();
 
                 if (IsAlive() == false)
                     return;
 
-                var signIn = GetComponent<AuthenticationSignInInterface>();
-                if ((signIn as UnityEngine.Object) == null)
-                    signIn = new AnonymousAuthenticationSignIn();
+                if (AuthenticationService.Instance.IsSignedIn == false)
+                {
+                    await AuthenticationService.Instance.SignInAnonymouslyAsync();
+                    if (IsAlive() == false)
+                        return;
 
-                await signIn.SignInAsync(callback.CancellationToken);
-                if (IsAlive() == false)
-                    return;
+                    logger.Log($"{name}> Sign in anonymously succeeded!");
+                }
 
                 var playerName = await AuthenticationService.Instance.GetPlayerNameAsync();
                 if (IsAlive() == false)
                     return;
 
-                callback.OnAuthenticated(AuthenticationService.Instance.PlayerId, playerName);
+                callback?.OnAuthenticated(AuthenticationService.Instance.PlayerId, playerName);
             }
             catch (AuthenticationException e)
             {
-                var error = new AuthenticationServiceException(e.ErrorCode, e.Message, e,
-                    e.Notifications?.Select(notification => new AuthenticationNotification(notification.CaseId,
-                        notification.CreatedAt, notification.Id, notification.Message, notification.PlayerId,
-                        notification.ProjectId, notification.Type)).ToArray() ?? Array.Empty<AuthenticationNotification>());
-                if (IsCallbackAlive())
-                    callback.OnError(error);
-                else
-                    logger.LogException(error);
+                callback?.OnError(new MyAuthenticationException(e.ErrorCode, e.Message, e, e.Notifications));
             }
             catch (OperationCanceledException e)
             {
-                if (IsCallbackAlive())
-                    callback.OnError(e);
+                callback?.OnError(e);
             }
             catch (RequestFailedException e)
             {
-                var error = new AuthenticationRequestFailedException(e.ErrorCode, e.Message, e);
-                if (IsCallbackAlive())
-                    callback.OnError(error);
-                else
-                    logger.LogException(error);
-            }
-            catch (Exception e)
-            {
-                var error = e as AuthenticationFlowException ?? new AuthenticationFlowException(e.Message, e);
-                if (IsCallbackAlive())
-                    callback.OnError(error);
-                else
-                    logger.LogException(error);
+                callback?.OnError(new AuthenticationRequestFailedException(e.ErrorCode, e.Message, e));
             }
 
             bool IsAlive()
             {
-                return IsCallbackAlive() && (callback.CancellationToken.IsCancellationRequested == false);
-            }
-
-            bool IsCallbackAlive()
-            {
-                return (this != null) && (callbackObject != null);
+                return (this != null) && (callbackObject != null) && (callback.CancellationToken.IsCancellationRequested == false);
             }
         }
     }
