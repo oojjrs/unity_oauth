@@ -10,17 +10,11 @@ namespace oojjrs.oauth
         public struct MyNotification
         {
             public string Id;
-
             public string CaseId;
-
             public string Message;
-
             public string PlayerId;
-
             public string ProjectId;
-
             public string Type;
-
             public string CreatedAt;
         }
 
@@ -31,16 +25,23 @@ namespace oojjrs.oauth
             : base(message, innerException)
         {
             ErrorCode = errorCode;
-            Notifications = notifications.Select(t => new MyNotification()
+            if (notifications != null)
             {
-                CaseId = t.CaseId,
-                CreatedAt = t.CreatedAt,
-                Id = t.Id,
-                Message = t.Message,
-                PlayerId = t.PlayerId,
-                ProjectId = t.ProjectId,
-                Type = t.Type,
-            }).ToList();
+                Notifications = notifications.Select(t => new MyNotification()
+                {
+                    CaseId = t.CaseId,
+                    CreatedAt = t.CreatedAt,
+                    Id = t.Id,
+                    Message = t.Message,
+                    PlayerId = t.PlayerId,
+                    ProjectId = t.ProjectId,
+                    Type = t.Type,
+                }).ToList();
+            }
+            else
+            {
+                Notifications = new();
+            }
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
@@ -6,7 +7,7 @@ using UnityEngine;
 
 namespace oojjrs.oauth
 {
-    public class Authenticator : MonoBehaviour
+    public abstract class Authenticator : MonoBehaviour
     {
         public interface CallbackInterface
         {
@@ -15,7 +16,7 @@ namespace oojjrs.oauth
             void OnAuthenticated(string account, string nickname);
             void OnError(MyAuthenticationException e);
             void OnError(OperationCanceledException e);
-            void OnError(AuthenticationRequestFailedException e);
+            void OnError(MyRequestFailedException e);
         }
 
         private bool _isQuitting = false;
@@ -27,19 +28,28 @@ namespace oojjrs.oauth
 
         private async void Start()
         {
-            await RunAsync();
+            var cancellationToken = destroyCancellationToken;
+
+            try
+            {
+                await RunAsync(cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
 
             if (_isQuitting == false)
                 Destroy(gameObject);
         }
 
-        private Task RunAsync()
+        private async Task RunAsync(CancellationToken cancellationToken)
         {
             var callback = GetComponent<CallbackInterface>();
-            return RunAsync(callback, callback as UnityEngine.Object);
+            await RunAsync(callback, callback as UnityEngine.Object, cancellationToken);
         }
 
-        private async Task RunAsync(CallbackInterface callback, UnityEngine.Object callbackObject)
+        private async Task RunAsync(CallbackInterface callback, UnityEngine.Object callbackObject, CancellationToken cancellationToken)
         {
             var logger = (callbackObject != null) ? (callback.Logger ?? Debug.unityLogger) : Debug.unityLogger;
             if (callbackObject == null)
@@ -50,44 +60,43 @@ namespace oojjrs.oauth
 
             try
             {
-                if (UnityServices.State is not (ServicesInitializationState.Initialized or ServicesInitializationState.Initializing))
+                if (UnityServices.State != ServicesInitializationState.Initialized)
+                {
                     await UnityServices.InitializeAsync();
-
-                if (IsAlive() == false)
-                    return;
+                    cancellationToken.ThrowIfCancellationRequested();
+                }
 
                 if (AuthenticationService.Instance.IsSignedIn == false)
                 {
-                    await AuthenticationService.Instance.SignInAnonymouslyAsync();
-                    if (IsAlive() == false)
-                        return;
+                    await SignInAsync();
+                    cancellationToken.ThrowIfCancellationRequested();
 
-                    logger.Log($"{name}> Sign in anonymously succeeded!");
+                    logger.Log($"{name}> SIGN IN SUCCEEDED.");
                 }
 
                 var playerName = await AuthenticationService.Instance.GetPlayerNameAsync();
-                if (IsAlive() == false)
-                    return;
+                cancellationToken.ThrowIfCancellationRequested();
 
-                callback?.OnAuthenticated(AuthenticationService.Instance.PlayerId, playerName);
+                if (callbackObject != null)
+                    callback.OnAuthenticated(AuthenticationService.Instance.PlayerId, playerName);
             }
             catch (AuthenticationException e)
             {
-                callback?.OnError(new MyAuthenticationException(e.ErrorCode, e.Message, e, e.Notifications));
+                if (callbackObject != null)
+                    callback.OnError(new MyAuthenticationException(e.ErrorCode, e.Message, e, e.Notifications));
             }
-            catch (OperationCanceledException e)
+            catch (OperationCanceledException e) when (cancellationToken.IsCancellationRequested == false)
             {
-                callback?.OnError(e);
+                if (callbackObject != null)
+                    callback.OnError(e);
             }
             catch (RequestFailedException e)
             {
-                callback?.OnError(new AuthenticationRequestFailedException(e.ErrorCode, e.Message, e));
-            }
-
-            bool IsAlive()
-            {
-                return (this != null) && (callbackObject != null) && (destroyCancellationToken.IsCancellationRequested == false);
+                if (callbackObject != null)
+                    callback.OnError(new MyRequestFailedException(e.ErrorCode, e.Message, e));
             }
         }
+
+        protected abstract Task SignInAsync();
     }
 }

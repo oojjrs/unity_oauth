@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.0
+
+- `Authenticator`를 플랫폼 로그인용 추상 기반 클래스로 변경하고 `SignInAsync()` 재정의 지점을 추가했습니다.
+- 기본 익명 로그인 컴포넌트 `AnonymousAuthenticator`를 추가하고 기존 `Authenticator` 스크립트 GUID를 이전해 기존 scene/prefab 참조가 기본 익명 구현을 계속 가리키도록 했습니다.
+- `AuthenticationSignInInterface`, `AnonymousAuthenticationSignIn`, `AuthenticationNotification`을 제거했습니다.
+- `AuthenticationRequestFailedException`을 `MyRequestFailedException`으로 변경하고 `Authenticator.CallbackInterface` 계약을 갱신했습니다.
+- GameObject 파괴 토큰을 비동기 흐름 전에 보존하고 파괴로 인한 취소는 오류 콜백 없이 종료하도록 변경했습니다.
+- SDK 알림이 없으면 `MyAuthenticationException.Notifications`가 빈 목록을 반환하도록 변경했습니다.
+
 ## 1.2.2
 
 - `Authenticator.CallbackInterface`의 `CancellationToken` 요구를 제거하고 `Authenticator`의 파괴 취소 토큰으로 인증 흐름의 생존 여부를 판단하도록 변경했습니다.
