@@ -1,5 +1,4 @@
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
@@ -11,7 +10,6 @@ namespace oojjrs.oauth
     {
         public interface CallbackInterface
         {
-            CancellationToken CancellationToken { get; }
             ILogger Logger { get; }
 
             void OnAuthenticated(string account, string nickname);
@@ -88,7 +86,7 @@ namespace oojjrs.oauth
 
             bool IsAlive()
             {
-                return (this != null) && (callbackObject != null) && (callback.CancellationToken.IsCancellationRequested == false);
+                return (this != null) && (callbackObject != null) && (destroyCancellationToken.IsCancellationRequested == false);
             }
         }
     }

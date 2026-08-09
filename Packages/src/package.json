@@ -1,7 +1,7 @@
 {
   "name": "com.oojjrs.oauth",
   "displayName": "OOJJRS' Unity AuthenticationService Helper",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "unity": "6000.0",
   "description": "Anonymous authentication flow for Unity Gaming Services.",
   "repository": {

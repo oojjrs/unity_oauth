@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.2
+
+- `Authenticator.CallbackInterface`의 `CancellationToken` 요구를 제거하고 `Authenticator`의 파괴 취소 토큰으로 인증 흐름의 생존 여부를 판단하도록 변경했습니다.
+
 ## 1.2.1
 
 - `Authenticator`의 인증과 수명 주기 흐름을 UnityOnet에서 분리하기 직전의 `MyNetAuthenticator` 동작과 맞췄습니다.
