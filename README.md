@@ -1,5 +1,8 @@
 # UnityOauth
 
+> [!WARNING]
+> **Obsolete:** 이 패키지는 더 이상 유지보수되지 않습니다.
+
 Unity Gaming Services를 초기화하고 인증 결과의 Player ID와 플레이어 이름을 전달하는 런타임 패키지다.
 
 ## 설치
